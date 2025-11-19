@@ -15,19 +15,26 @@
 
 ### signInボタンから認証許可画面までのフロー
 1. singInボタンを押し、以下のリクエストを送る
+
 ブラウザ　-``GET /api/auth/signin/github``->　Next サーバー
+
 2. Nextサーバーは 認可サーバー(GitHub)の認可エンドポイントにリダイレクトするレスポンスを返す
+
 ブラウザ　<-``302 Found
 Location: https://github.com/login/oauth/authorize?
 client_id=xxxxx&
 redirect_uri=https://yourapp.com/api/auth/callback/github&
 response_type=code``-　Next サーバー
+
 3. ブラウザから認可サーバーへリダイレクトする
+
 ブラウザ　-`GET https://github.com/login/oauth/authorize?
 client_id=xxxxx&
 redirect_uri=https://yourapp.com/api/auth/callback/github&
 response_type=code`->　認可サーバー
+
 4. 認可サーバーから認証画面が帰ってくる
+
 ブラウザ　<-``${認証画面のHTML}``-　認可サーバー
 
 
@@ -36,28 +43,37 @@ response_type=code`->　認可サーバー
 このときのリクエストは、HTMLのformタグ内でボタンをsubmit()したときのPOSTリクエストです
 
 2. 認可サーバーがNextサーバーのredirect_uriにリダイレクトするレスポンスを返す
+
 ブラウザ　<-``302 Found
 Location: https://yourapp.com/api/auth/callback/github?code=abc123``-　認可サーバー
+
 3. ブラウザからNextサーバーへリダイレクトする
 ただし、このパスは``/api``とある通り、ブラウザではなく、Nextサーバーで実行されるwebAPIが動きます
+
 ブラウザ　-``GET /api/auth/callback/github?code=abc123``->　Nextサーバー
+
 4. ``/api/auth/callback/github``API内で認可サーバーにリクエストを送る
+
 Nextサーバー　-`POST https://github.com/login/oauth/access_token
 body: {
 client_id=xxxxx
 client_secret=yyyyy
 code=abc123} `->　認可サーバー
+
 5. 認可サーバーが Next サーバーにアクセストークンを返す
+
 Next サーバー　<-`200 OK body: {
   "access_token": "abcdef...",
   "token_type": "bearer",
   "scope": "user:email"
 } `-　認可サーバー
+
 6. Next サーバーが各ブラウザ(ユーザー)を識別するための Cookie を返す
 Nextはそのままjwtを返しません
 jwtは自身が保持している情報が改ざんされていないかを保証しますが、jwtを自身を奪われてしまえば、中身を見られてしまいます
 そのため、Nextサーバー内で暗号化し、トークンが奪われてしまっても、中身が確認できないようにします(ただ、なりすましはできてしまう)
 暗号化したトークンをセッションキーとしてブラウザに返します
+
 ブラウザ <-`Set-cookie: a1b2c3de...`- Next サーバー
 
 
